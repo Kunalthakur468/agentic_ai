@@ -14,3 +14,6 @@ print("median is :",median)
 
 variance = np.var(arr)
 print("Variance is:",variance)
+#Logical Operation on Array 
+print(arr[(arr>3) & (arr <7)])
+print(type(arr))
