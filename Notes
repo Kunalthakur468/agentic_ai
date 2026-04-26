@@ -1,0 +1,584 @@
+Pydantic is the most widely used data validation library for Python.
+
+Fast and extensible, Pydantic plays nicely with your linters/IDE/brain.
+
+pip install ipykernel
+
+UV Package manager : https://docs.astral.sh/uv/getting-started/installation/
+pip install uv
+uv init <project_name>-> to create a project 
+
+===== LangChain   =====
+LangChain is an open source framework where you will be finiding lot of modules,libraries which will help you to develop GEN AI app.
+https://www.langchain.com/
+
+Step1 : Create an account in Langchain
+
+install langchain module
+pip install langchain
+
+.) Create new .env file in the same tree as we have requirement.txt file.
+We will create our OPENAIAPI key here
+OPENAI_API_KEY=""
+LANGCHAIN_API_KEY=""
+LANGCHAIN_PROJECT="GenAIAPPWithOpenAI"
+
+Q) Why do we need LangChain API key ?
+-> In the LangChain portal, I am going to record all the monitoring/debugging things w.r.t. GEN AI that I am going to create.
+
+In LangChain portal Go to Setting > API Keys > Create API Key > Give Description -> Test_Key > Key_Type : PAT > Create API Key 
+Copy it & paste it in .env file under LANGCHAIN_API_KEY.
+
+add this library (python-dotenv ) in requirement.txt file. 
+Q) why we have added python-dotenv library?
+-> whatever things we have written in .env file to import the Key-value pair in the jupyter notebook or in .ipynb file.
+
+
+===== Setup venv env for langchain =====
+Create new folder for Langchain
+conda -p venv python==3.10 -y   => y is for whatever the default installation that will happen while creating the virtual env.
+
+Create requirement.txt 
+langchain
+python-dotenv
+ipykernel
+langchain_community
+pypdf
+bs4
+arxiv
+pymupdf
+wikipedia
+langchain_text_splitters
+langchain_openai
+chromadb
+sentence_transformers
+langchain_huggingface
+faiss-cpu
+langchain_chroma
+
+
+conda activate venv/
+> pip install -r requirement.txt
+
+======= Important Components of Langchain ======
+
+
+===== Data Ingestion with Document Loader =====
+i) Text Loader -> its help you load any type of text file.
+When we are loading this entire content in the speech.txt will be converted into a document only when we write loader.load().
+
+from langchain_community.document_loaders import TextLoader
+
+loader = TextLoader('speech.txt')
+#loader -> object of document type
+text_document = loader.load()
+text_document # You will able to see the content along with metadata information
+
+ii) PyPDF -> Reading a PDF file 
+
+from langchain_community.document_loaders import PyPDFLoader
+loader1 = pyPDFLoader('attention.pdf')
+docs= loader1.load()
+docs
+type(docs) #List
+type(docs[0]) # Document Type
+
+iii) Web Based Loader  
+
+Using web_paths, we can read any number of urls using "," comma seperator.
+When web_path, use 1 url. If we use web_paths, then we can use multiple url's.
+
+Here you need bs4(beautiful Soup), when you need to perfrom the scraping task in your project.
+
+from langchain_community.document_loaders import WebBasedLoader
+import bs4
+
+loader2 = WebBasedLoader(web_paths=("https://docs.langchain.com/oss/python/integrations/document_loaders",),
+bs_kwargs=dict(parse_only=bs4.SoupStrainer(class_=("post-title","post-content","post-header"))))
+loader2.load()
+
+iv) Arxiv => arXiv is an open-access archive for 2 million scholarly articles in the fields of physics, mathematics, computer science, quantitative biology, quantitative finance, statistics, electrical engineering and systems science, and economics.
+
+from langchain_community.document_loaders import ArxivLoader
+
+# Supports all arguments of `ArxivAPIWrapper`
+docs = ArxivLoader(
+    query="1706.03762", # Attention is all you need research paper
+    load_max_docs=2, # maximum it will load 2 documents
+    # doc_content_chars_max=1000,
+    # load_all_available_meta=False,
+    # ...
+)
+
+lens(docs)
+
+v) Wikipedia 
+
+from langchain_community.document_loaders import WikipediaLoader
+docs = WikipediaLoader(query="Generative AI", load_max_docs=2).load()
+len(docs)
+print(docs)
+
+
+======= Recursive Character Text Splitter ======
+This text splitter that is recursive character text splitter is the recommended one for the generic text. It is parameterized by a list of characters.
+It tries to split on them in order until the chunks are small enough. The default list is ["\n\n","\n", " ",""]
+They use these characters to probably do the splitting. 
+this has the effect of trying to keep all the paragraphs and then sentences and then words together as long as possible.
+
+. How the text is split: by the list of characters
+. How the chunk size is measured : by number of characters
+
+
+from langchain_community.document_loaders import pyPDFLoader
+loader1 = pyPDFLoader('attention.pdf')
+docs= loader1.load()
+docs
+
+We are going to take the entire pdf & then going to convert into text.
+
+Q) How to recursively split the text by characters?
+We need langchain_text_splitters moduke for that .
+
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+text_splitter = RecursiveCharacterTextSplitter(chunk_size=500,chunk_overlap=50)
+final_documents =text_splitter.split_documents(docs)
+final_documents
+print(final_documents[0])
+print(final_documents[1]) # Here you will see last 50 characters from final_documents[0] due to overlap size.
+
+* create_documents will be useful when we use text-file 	
+
+
+# Text Loader
+from langchain_community.document_loaders import TextLoader
+
+loader = TextLoader('speech.txt')
+docs = loader.load()
+docs
+
+speech=""
+with open("speech.txt") as f:
+	speech.f.read()
+speech # it will give information in text type.
+
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+text_splitter= RecursiveCharacterTextSplitter(chunk_size=100,chunk_overlap=20)
+text=text_splitter.create_documents(speech)
+
+print(text[0])
+print(text[1]) # Here 20 characters will be repeated from text[0]
+
+type(text[0]) # langchain_core.documents.base.Document
+
+whenever we work with long chain, it tries to convert everything into a document type.
+Because if we try to convert a text into a document type, we will have more features which we can specifically implement.
+
+======= Recursive Character Text Splitter ======
+How to split by character-character text Splitter?
+
+This is the simplest method. This splits based on a given character sequence, which defaults to "\n\n". Chunk length is measured by number of characters.
+
+. How the text is split: by single character seperator
+. How the chunk size is measured : by number of characters
+
+from langchain_community.document_loaders import TextLoader
+
+loader = TextLoader('speech.txt')
+docs = loader.load()
+docs
+
+from langchain_text_splitters import CharacterTextSplitter
+text_splitter = CharacterTextSplitter(seperator="\n\n",chunk_size=100,chunk_overlap=20)
+text_splitter.split_documents(docs)
+
+#"Created a chunk of size 470, which is longer than the specified 100"
+#"Created a chunk of size 347, which is longer than the specified 100"
+#"Created a chunk of size 668, which is longer than the specified 100"
+
+When we run this, it says "Created a chunk of size 470, which is longer than the specified 100". The reason is, it is not able to find the seperator.
+Wherever it was able to find the seperator based on that it has created the chunk size.
+
+If we are not giving the seperator, then by-default it will be "\n\n".
+
+from langchain_community.document_loaders import TextLoader
+
+loader = TextLoader('speech.txt')
+docs = loader.load()
+docs
+
+speech=""
+with open("speech.txt") as f:
+	speech.f.read()
+	
+from langchain_text_splitters import CharacterTextSplitter
+
+text_splitter= CharacterTextSplitter(chunk_size=100,chunk_overlap=20)
+text=text_splitter.create_documents([speech])
+print(text[0])
+print(text[1])
+
+Q) Which one should we use? RecursiveCharacterTextSplitter or CharacterTextSplitter ?
+-> whenever you have an opportunity you have a choice from this particular two that you want to select.Go ahead with RecursiveCharacterTextSplitter.
+
+====== HTML Text Splitter ========
+We have a library HTMLHeaderTextSplitter.
+
+It is a "structured-aware" Chunk that splits text at HTML elements level and adds metadata for each header "relevant" to any given chunk.
+It can return chunk elements by element, or combine elements with the same metadata with the objective of 
+(a) keeping related text grouped (more or less) semantically 
+(b) preserving context rich information encoded in the document structure.
+It can be use with other text_splitters as part of the chunking pipeline.
+
+from langchain_text_splitters import HTMLHeaderTextSplitter
+
+html_string = """
+<!DOCTYPE html>
+<html>
+<body>
+<h1></h1>
+<div></div>
+<div></div>
+<br>
+<p></p>
+</body>
+</html>
+"""
+
+headers_to_split_on=[("h1","Header 1"),("hw","Header 2"),("h3","Header 3")]
+html_splitter= HTMLHeaderTextSplitter(headers_to_split_on=headers_to_split_on)
+html_header_splits= html_splitter.split_text(html_string)
+html_header_splits #It is of document type. In the metadata you will see, how the text is splitted between Headers.
+
+
+ANOTHER EXAMPLE :
+url ="https://plato.standford.edu/entries/geodel/"
+
+headers_to_split_on=[("h1","Header 1"),("hw","Header 2"),("h3","Header 3")]
+html_splitter2= HTMLHeaderTextSplitter(headers_to_split_on=headers_to_split_on)
+html_splitter2
+
+
+===== Recursive JSON Text Splitter =======
+Q) How to split the JSON data?
+this JSON splitter splits JSON data while allowing control over chunk sizes.It traverses JSON data depth first and builds smaller JSON chunks.
+It attempts to keep nested JSON objects whole, but will split them if needed to keep chunks between a minimum chunk size and the maximum chunk size.
+
+If the value is not a nested JSON, but rather a very large string, the string will not be split. 
+If you need a hard cap on the chunk size, consider composing this with a recursive text character splitter. there is an optional pre-processing step to split list by first converting them into JSON dictionary and then splitting them first.
+
+	. How the text is splited : based pn JSON value
+	. How the chunk size is measured : by number of characters
+	
+	
+
+import json
+import requests
+
+json_data = request.get("https://api.smith.langchain.com/openapi.json").json()
+
+from langchain_text_splitters import RecursiveJsonSplitter
+json_splitter = RecursiveJsonSplitter(max_chunk_size=300)
+json_chunks=json_splitter.split_json(json_data)
+
+for chunk in json_chunks:
+	print(chunks)
+	
+# The splitter can also output documents
+docs = json_splitter.create_documents(text=[json_data])
+for doc in docs[:3]:
+	print(doc)
+	
+#If you don't want it in document, then we can split it into texts.
+texts=json_splitter.split(json_data)
+print(texts[0))
+print(texts[1])
+
+
+============================ Introduction to OPENAI Embeddings ========================
+Converting text chunks into Vectors. 
+Embeddings : A set of models converting text into a numerical form(Vector)
+
+There are various ways to convert it into Vectors :
+i) OpenAI -> PAID 
+ii) Ollama -> Open Source 
+iii) Hugging Face -> Open Source 
+iv ) some other embedding techiniques
+
+Search for "Openai api key) -> go to platform -> Create account in Open ai -> create your own API key
+Copy the API key & store it in .env file.
+OPENAI_API_KEY =""
+
+import os
+from dotenv import load_dotenv
+load_dotenv() # it will call all your env variables & load in your coding env.
+
+#Since we are woorking langchain with Openai & for that we need langchain_openai library
+
+os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY")
+
+
+Key Embedding Models
+text-embedding-3-large: The most capable model, offering 3,072 dimensions, high performance for complex tasks, and strong multilingual support.
+text-embedding-3-small: A highly efficient, smaller model that outperforms text-embedding-ada-002 while being faster and cheaper.
+text-embedding-ada-002: A previous-generation standard model, widely used for general purposes with 1,536 dimensions
+
+from langchain_openai import OpenAIEmbeddings
+embeddings= OpenAIEmbeddings(model="text-embedding-3-large")
+embeddings
+
+Text = "This is tutorial on OPENAI Embedding"
+
+*** Note - Remember this OpenAI embedding is not completely for free because there will be some charges that will be applied for this particular embedding.
+query_result=embedding.embed_query(text) #converted text into vectors
+query_result 
+len(query_result[0]) # 3072 -> So what it does is that it takes this entire sentence and it converts into a vector of 3072 dimension.
+
+If we want we can set our own dimension as well.
+embeddings_1024= OpenAIEmbeddings(model="text-embedding-3-large",dimensions=1024)
+query_result_1024=embeddings_1024.embed_query(text)
+len(query_result_1024[0]) #1024
+
+Example 2 :
+
+loader = TextLoader('speech.txt')
+docs = loader.load()
+docs
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+text_splitter = RecursiveCharacterTextSplitter(chunk_size=500,chunk_overlap=50)
+final_documents =text_splitter.split_documents(docs)
+final_documents
+
+# Now I will read the list of document, convert it into vectors & store it in Vector DB.
+#Vector Embedding & Vector StoreDB(Chroma)
+from langchain_community.vectorstores import Chroma
+
+#First we need to convert all the document texts into vectors.
+db = Chroma.from_documents(final_documents,embeddings_1024)
+db # Vector Store
+
+Q) How do we query from this vector db?
+
+query = "It will be all easier for us to conduct ourselves as belligerents"
+retrieved_results=db.similarity_search(query)
+print(retrieved_results)
+
+=============== Ollama Embedding =======================
+Ollama supports embedding models, making it possible to build RAG(Retrieval Augmented Generation) applications that combine text prompts with existing documents or other data.
+
+Olama is kind of a platform where you will be able to use open source models like Llama3 , Phi3,Mistral, and Gemma.
+These are various open source models that are available right now, and you can probably run all these models in your local machine itself in your local workstation.
+
+Download Ollama for Windows
+Download the Models for Ollama :
+Open cmd 
+> ollama run gemma:2b # If you are running for the 1st time, it will download the gemma:2b model & then start chating with it.	
+
+pip install langchain-community
+
+Create requirement.txt 
+langchain
+python-dotenv
+ipykernel
+langchain-community
+pypdf
+bs4
+arxiv
+pymupdf
+wikipedia
+langchain_text_splitters
+langchain_openai
+chromadb
+sentence_transformers
+langchain_huggingface
+faiss-cpu
+langchain_chroma
+
+from langchain_community.embeddings import OllamaEmbeddings
+
+embeddings = (OllamaEmbeddings(model="gemma:2b") # by default it uses llama2
+) 
+embeddings #OllamaEmbeddings(base_url='http://localhost:1143', model='gemma:2b', embed_instruction='passage: ',
+
+r1=embeddings.embed_documents(
+	[
+		"Alpha is the first letter of the Greek alphabet",
+		"Beta is the second letter of the Greek alphabet"
+	]
+	
+len(r1[0]) # 2048 dimension
+
+embeddings.embed_query("What is the second letter of Greek alphabet") -> this question is something similar to r1[1] & both the vectors should match a bit.
+Two sentences are almost similar because that is just an answer saying that hey beta is the second letter of the Greek alphabet.
+
+
+#### Other Embedding Models	
+### URL : https://ollama.com/blog/embedding-models
+
+> ollama pull mxbai-embed-large  # Download other embedding models
+
+embeddings = (OllamaEmbeddings(model="mxbai-embed-large")
+text="This is a text document"
+query_result=embeddings.embed_query(text)
+len(query_result) #1024 dimensions
+
+
+===================== HuggingFace Embedding ==============
+best thing about huggingface and langchain is that they have created a library (langchain_huggingface),
+a integration of huggingface and langchain, so we can call any LLM models here.
+
+Create account > Settings > Access Tokens > Create Access Token > Name : langchain , Type: read > generate > Copy
+We will be going to read Access Token to access the LLm Models
+
+import os
+from dotenv import load_dotenv
+load_dotenv() # load all env variables
+
+HF_TOKEN = "copy it from Ollama account " & save it in .env file
+
+os.environ['HF_TOKEN']=os.getenv("HF_TOKEN")
+
+Install new library "sentence_transformers", bcoz in this library embedding techinique is available.
+
+*Hugging Face sentence_transformers is a python framework for the state-of-the-art sentence,text & image embeddings. 
+One of the embedding model is used in HuggingFaceEmbeddings class. We have also added an alias for SentenceTransformerEmbeddings for users who are familiar with directly using that package.
+
+Okay, so this basically uses something called a sentence. 
+
+from langchain_huggingface import HuggingFaceEmbeddings
+embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+
+text= " This is a text document"
+query_result=embeddings.embed_query(text)
+len(query_result) #384 dimensions
+
+doc_result=embeddings.embed_documents([text,"This is not a text document."])
+doc_result[0]
+
+
+=============== Vector Stores ===============
+FAISS 
+CDHROMA DB
+ASTRA DB -> it Uses Cassandra DB
+
+FAISS -> FAISS(Facebook AI Similarity Search. it is a library for efficient similarity search and clustering of dense vectors. 
+It contains algorithms that search in a set of vectors of any size, up to ones that possibly do not fit in the RAM.
+It also contains supporting code for evaluation and parameter tuning.
+
+from langchain_community.document_loaders import TextLoader
+from langchain_community.vectorstores import FAISS
+from langchain_community.embeddings import OllamaEmbeddings
+from langchain_text_splitters import CharacterTextSplitter
+
+loader=TextLoader('speech.txt')
+documents=loader.load()
+text_splitter=CharacterTextSplitter(chunk_size=1000,chunk_overlap=30)
+docs=text_splitter.split_documents(documents)
+
+embeddings=OllamaEmbeddings()
+db=FAISS.from_documents(docs,embeddings)
+db # <langchain_community.vectorstores.faiss.FAISS at >
+
+# since it is running in my local machine.So it is going to take some amount of time for your system.
+
+#querying 
+query="What does the speaker believe is the main reason the United States enter the war?"
+query="How does the speaker describe the desired ourcome of the war?"
+
+docs=db.similarity_search(query)
+docs 
+
+->Whatever things are basically matching, we get every of these things right.
+
+docs[0].page_content 
+
+*** Retrieval -> we can also convert the vector stored into a retriever class.This allows us to easily use it in another langchain methods, which largely works with retriever.
+this retrievers are like an interface, whenever we put any kind of query, it is just like connected to the vector store DB, only when we convert this vector store db in to retrieve a class.
+so it lacks acts like an interface which will be able to retrieve the details from the vector store and provide you the response.
+
+#Convert Vector DB into a Retriever
+retriever=db.as_retriever()
+retriever.invoke(query)
+
+the reason of using this is that later on when we work with different, different LLM models,at that point of time, I cannot directly use vector store DB, 
+but initially I need to convert this Vector DB into a retriever And then finally use it with any LLm Model.
+
+*** Similarity Search with Score 
+There are some FAISS specific methods.One of them is similarity_search_with_score, which allows you to return not only documents,
+but also the distance score of the query to them.The return distance score is L2 distance, which is also called as Manhattan distance.
+Therefore lower score is better.
+
+docs_and_score =db.similarity_search_with_score(query)
+docs_and_score #[Document(page_content='It is a distressing and oppressive duty,gentleman of the Congress',15552.862),
+
+w.r.t. every information I get, there will be a score that will be attached. which is L2 score(Manhattan distance)
+
+Q) can we not directly pass vectors instead of sentences?
+-> Yes, we can do that. 
+
+embedding_vector=embeddings.embed_query(query)
+embedding_vector
+
+docs_score = db.similarity_search_by_vector(embedding_vector)
+docs_score
+
+Q) How I can probably save this vector DB vector store DB in my local. ?
+->
+### Saving & Loading 
+db.save_local("faiss_index") => faiss_index is index name
+
+Once I execute this, your file will be saved in the form of pickle & create a folder. Here you also have something called index.file (index.faiss,index.pkl)
+
+new_db=FAISS.load("faiss_index",embeddings,allow_dangerous_deserialization=True)
+# allow_dangerous_deserialization= True means , I trust this file & help me to deserialize it.
+docs=new_db.similarity_search(query)
+docs
+
+========== 59 - Vector Stores & Retriever - Chroma DB =====================
+Chroma DB : It is an AI native open source vector DB focused on developer productivity and happiness.Chroma is licensed under Apache 2.0.
+
+Make sure you have installed Chroma DB
+
+Step 1 : Building a sample vectordb
+from langchain_chroma import Chroma
+from langchain_community.document_loaders import TextLoader
+from langchain_community.vectorstores import FAISS
+from langchain_community.embeddings import OllamaEmbeddings
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+
+loader=TextLoader('speech.txt')
+data=loader.load()
+
+#Split the data
+text_splitter= RecursiveCharacterTextSplitter(chunk_size=500,chunk_overlap=0)
+splits = text_splitter.split_documents(data)
+
+embeddings= OllamaEmbeddings()
+vectordb=Chroma.from_documents(splits,embedding=embedding)
+vectordb
+
+#query the db
+query = " When does the speaker believe is the main reason the United States should enter the war?"
+docs=vectordb.similarity_search(query)
+docs[0].page_content
+
+# save it in the local/disk
+vectordb2=Chroma.from_documents(splits,embedding=embedding,persist_directory="./chroma_db")
+Above  command creates a sqllite3 db. Every vector will be stored in this DB.
+
+#load from the local/disk
+db2 = Chroma(persist_directory="./chroma_db",embedding_function=embedding)
+dcos=db2.similarity_search(query)
+print(docs[0].page_content)
+
+#Similarity search with score
+docs = vectordb2.similarity_search_with_score(query)
+docs 
+
+###Retriever option
+retriever=vectordb2.as_retriever()
+retriever.invoke(query)[0].page_content
